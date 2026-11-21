@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Thesen-Matrix</title>
+<style>
+:root{--bg:#fff;--fg:#1a1a1a;--muted:#707070;--line:#cfcfcf;
+--g1:#1f5f8f;--g2:#a4531c;--g3:#2d7a4b;--g4:#7a3d8f;--green:#2d7a4b;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161616;--fg:#e6e6e6;--muted:#9a9a9a;--line:#3a3a3a;--g1:#7db8e6;--g2:#e8a070;--g3:#7fcf9c;--g4:#c99ce0;--green:#7fcf9c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#161616;--fg:#e6e6e6;--muted:#9a9a9a;--line:#3a3a3a;--g1:#7db8e6;--g2:#e8a070;--g3:#7fcf9c;--g4:#c99ce0;--green:#7fcf9c;color-scheme:dark}
+body.sol{--bg:#e8f3e9;--line:#b9d1bc}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) body.sol{--bg:#16231a;--line:#38503d}}
+:root[data-theme="dark"] body.sol{--bg:#16231a;--line:#38503d}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 Georgia,'Times New Roman',serif}
+main{padding:24px 16px 60px}
+h1{font-size:1.4rem;font-weight:600;margin:0 0 16px}
+.tabs{display:flex;gap:4px;margin:0 0 18px;font:600 .85rem system-ui,sans-serif}
+.tabs button{font:inherit;color:var(--muted);background:none;border:1px solid var(--line);border-radius:6px;padding:6px 14px;cursor:pointer}
+.tabs button[aria-selected="true"]{color:var(--fg);border-color:var(--fg)}
+.tabs button:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;table-layout:fixed;width:100%;min-width:1500px}
+th,td{border:1px solid var(--line);padding:10px;vertical-align:top;text-align:left}
+thead th{font-weight:600;text-align:center}
+thead th small{display:block;font-weight:400;color:var(--muted)}
+th.rowh{width:96px;font:600 .8rem system-ui,sans-serif;color:var(--muted)}
+.card{padding:0 0 10px;margin-bottom:10px;border-bottom:1px solid var(--line);transition:opacity .15s}
+.card:last-child{padding-bottom:0;margin-bottom:0;border-bottom:0}
+.card.dim{opacity:.2}
+.tag{font:700 .72rem system-ui,sans-serif;margin-bottom:3px}
+.card[data-g="G1"] .tag{color:var(--g1)}.card[data-g="G2"] .tag{color:var(--g2)}
+.card[data-g="G3"] .tag{color:var(--g3)}.card[data-g="G4"] .tag{color:var(--g4)}
+body.sol .card .tag{color:var(--green)}
+.del{font:inherit;margin-left:8px;color:var(--muted);background:none;border:1px solid var(--line);border-radius:4px;padding:0 6px;cursor:pointer}
+.del:hover,.del:focus-visible{color:var(--fg);border-color:var(--fg);outline:none}
+.q{font-style:italic;margin-bottom:5px}
+.t{font-size:.92rem}
+[contenteditable]:focus{outline:1px solid var(--fg);outline-offset:2px}
+.panel{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;margin:0 0 18px;font:.85rem system-ui,sans-serif}
+.panel input,.panel select,.panel textarea,.panel button{font:inherit;font-size:16px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 10px}
+.panel button{cursor:pointer;font-weight:600;font-size:.85rem}
+.panel textarea{flex:1 1 100%;min-width:0;box-sizing:border-box}
+.panel .msg{flex:1 1 100%;color:var(--muted);min-height:1.2em}
+@media print{
+.tabs,.panel,.del{display:none!important}
+:root:root:root,:root:root:root body,:root:root:root body.sol{--bg:#fff;--fg:#1a1a1a;--muted:#707070;--line:#cfcfcf;--g1:#1f5f8f;--g2:#a4531c;--g3:#2d7a4b;--g4:#7a3d8f;--green:#2d7a4b;color-scheme:light}
+.wrap{overflow:visible}table{min-width:0}
+@page{size:landscape;margin:10mm}
+}
+</style>
+</head>
+<body>
+<main>
+<div class="tabs" role="tablist">
+ <button role="tab" id="tab-d" data-view="diskussion">Diskussion</button>
+ <button role="tab" id="tab-l" data-view="loesung">Musterlösung</button>
+</div>
+<h1 id="ttl"></h1>
+<div id="panel" class="panel"></div>
+<div class="wrap"><table id="tbl"></table></div>
+</main>
+<script>
+var CORE={q:'Warum und wie konnte Preußen Hemmfaktor in der politischen Modernisierung Deutschlands werden? Worin bestanden die Charakteristika der Wahlkultur in Preußen, in welcher Weise war sie durch Milieusegmentierung und Wahlrecht mitbestimmt? ',t:'Die hemmende Funktion Preußens ging nicht monokausal aus dem Wahlrecht und obrigkeitlichen Bestimmungen hervor, sondern folgte aus dem Zusammenspiel institutioneller Strukturen und gesellschaftlicher Milieufragmentierung. Entsprechend war die antimoderne Wirkung des Wahlrechts ungleichmäßig und teils paradox.'};
+var LABELS=[['Parteisysteme','Abschnitt 1'],['Wahlbeteiligung','Abschnitt 2'],['Wahlkampf','Abschnitt 3'],['Wahlbeeinflussung','Abschnitt 4'],['Kandidatenaufstellung','Abschnitt 5'],['Wahlbündnisse','Abschnitt 6']];
+function ph(n){return {q:'Frage zu Abschnitt '+n+' …',t:'These zu Abschnitt '+n+' …'}}
+function mk(){return JSON.parse(JSON.stringify({
+ labels:LABELS,core:CORE,
+ joint:[
+  {g:'G1',from:1,to:2,lane:0,q:'Geht die geringe Wahlbeteiligung daraus hervor, dass bei den preußischen Landtagswahlen die Konkurrenz zwischen den Parteien gering war bzw. eine vorherrschende Konstellation stagnierte?',t:'Die geringe Wahlbeteiligung resultierte aus einer stagnierenden Parteikonstellation.'},
+  {g:'G2',from:2,to:3,lane:1,q:'Wie hingen die unterschiedlichen Wahlbeteiligungen im Preußen des Kaiserreichs mit den unterschiedlichen Wahlkampfstrategien zusammen?',t:'Die verschiedenen Wahlkampfstrategien wurden wenig an lokale Unterschiede in der Wahlbeteiligung angepasst, obwohl diese den Parteien bewusst waren.'},
+  {g:'G3',from:3,to:4,lane:0,q:'Welche Aspekte waren für den Wahlkampf in den verschiedenen Milieus unter dem Dreiklassenwahlrecht von Bedeutung?',t:'Wahlkampf unter dem Dreiklassenwahlrecht wurde durch eine Vielzahl von Methoden, Beeinflussungen sowohl von staatlicher als auch von konfessioneller Seite und regionale Unterschiede beeinflusst.'},
+  {g:'G4',from:5,to:6,lane:0,q:'Durch welche innerparteilichen Veränderungen wandelten sich die Wahlbündnisse und ihre Zusammensetzungen?',t:'Durch die Emanzipation der Arbeiterschaft und anderer Berufsstände fand eine Verschiebung der politisch beteiligten Gesellschaftsmilieus statt.'}
+ ],
+ single:[
+  {g:'G1',sec:1,q:'Warum differenzierten sich die Parteikonstellationen bei preußischen Landtagswahlen nicht wie bei den Reichstagswahlen?',t:'Bei den preußischen Landtagswahlen wurde aufgrund des Dreiklassenwahlsystems die SPD massiv benachteiligt, die Ergebnisse standen vorzeitig fest und die Parteien stellten ihre Bemühungen in den Wahlkreisen vorzeitig ein, wodurch keine Konfliktorientierung, sondern Stagnation der Parteikonstellationen entstand.'},
+  {g:'G1',sec:2,q:'Warum blieb die Beteiligung an Landtagswahlen so niedrig?',t:'Es war nicht ausschließlich eine Folge von Wahlterror oder ein Protest gegen das Dreiklassenwahlrecht, sondern vielmehr Ausdruck eines ökonomisch-kooperativen Wahlverständnisses.'},
+  {g:'G2',sec:2,q:'Wodurch kam es zu der pragmatischen Wahlenthaltung im Preußen des Kaiserreiches?',t:'Das indirekte Wahlrecht ließ die Beteiligung breiter Massen an den Wahlen als unnötig und konfliktprovozierend erscheinen.'},
+  {g:'G2',sec:3,q:'Welche Gründe liegen dem unterschiedlichen Ausmaß der Dynamisierung des Wahlkampfes in Stadt bzw. Land zugrunde?',t:'Auf dem Land war mehr Kleinarbeit, in der Stadt mehr Massenagitation notwendig.'},
+  {g:'G3',sec:3,q:'Wie beeinflussten neue Wahlkampfformen den Wahlkampf in den sozialen Milieus?',t:'Die Ausdifferenzierung der Parteien führte zu einer Ausdifferenzierung der Agitationsmethoden in den Milieus.'},
+  {g:'G3',sec:4,q:'Auf welcher Basis formierten sich Wahlentscheidungen in der Bevölkerung im Dreiklassenwahlrecht?',t:'Im Dreiklassenwahlrecht kam es zu verschiedenen psychologischen Beeinflussungen durch unterschiedliche Obrigkeiten.'},
+  {g:'G4',sec:5,q:ph(5).q,t:ph(5).t},
+  {g:'G4',sec:6,q:ph(6).q,t:ph(6).t}
+ ]}))}
+function mkSol(){
+ var d=mk();
+ d.joint.forEach(function(j){var p=ph(j.from+' + '+j.to);j.q=p.q;j.t=p.t;j.g='L'});
+ d.single=[1,2,3,4,5,6].map(function(n){var p=ph(n);return {g:'L',sec:n,q:p.q,t:p.t}});
+ return d;
+}
+var VIEWS={
+ diskussion:{key:'thesenmatrix-v2',title:'Thesen-Matrix: Preußische Landtagswahlen im Kaiserreich',cls:'',make:mk,solution:false},
+ loesung:{key:'thesenmatrix-loesung-v1',title:'Musterlösung - Thesenmatrix Preußische Landtagswahlen im Kaiserreich',cls:'sol',make:mkSol,solution:true}
+};
+function load(v){
+ var D=null;
+ try{var s=localStorage.getItem(v.key);D=s?JSON.parse(s):null}catch(e){D=null}
+ if(!D)D=v.make();
+ if(!v.solution){[5,6].forEach(function(n){if(!D.single.some(function(x){return x.g==='G4'&&x.sec===n}))D.single.push({g:'G4',sec:n,q:ph(n).q,t:ph(n).t})})}
+ if(!D.core)D.core=JSON.parse(JSON.stringify(CORE));
+ return D;
+}
+var FLASH='';
+function payload(D){return {v:1,
+ joint:D.joint.map(function(j){return {g:j.g,from:j.from,to:j.to,lane:j.lane,q:j.q,t:j.t}}),
+ single:D.single.map(function(x){return {g:x.g,sec:x.sec,q:x.q,t:x.t}})}}
+function enc(o){return btoa(unescape(encodeURIComponent(JSON.stringify(o))))}
+function dec(s){return JSON.parse(decodeURIComponent(escape(atob(s.replace(/\s+/g,'')))))}
+function shareText(p){
+ var e=[];
+ p.joint.forEach(function(j){e.push({k:j.from+0.5,l:(j.g?j.g+' · ':'')+'Abschnitt '+j.from+' + '+j.to,q:j.q,t:j.t})});
+ p.single.forEach(function(s){e.push({k:s.sec,l:(s.g?s.g+' · ':'')+'Abschnitt '+s.sec,q:s.q,t:s.t})});
+ e.sort(function(a,b){return a.k-b.k});
+ var L=['Thesen-Matrix',''];
+ e.forEach(function(x){L.push(x.l,'Frage: '+x.q.trim(),'These: '+x.t.trim(),'')});
+ L.push('Code zum Einlesen (bitte nicht ändern):','[[THESEN:'+enc(p)+']]');
+ return L.join('\n');
+}
+function parseInput(txt){
+ var out=[],re=/\[\[THESEN:([^\]]+)\]\]/g,m;
+ while((m=re.exec(txt))){try{out.push(dec(m[1]))}catch(e){}}
+ if(!out.length){try{var j=JSON.parse(txt);out=Array.isArray(j)?j:[j]}catch(e){}}
+ return out.filter(function(p){return p&&Array.isArray(p.joint)&&Array.isArray(p.single)});
+}
+function addToSol(D,p){
+ D.imports=D.imports||[];
+ var key=JSON.stringify([p.joint,p.single]);
+ if(D.imports.some(function(i){return JSON.stringify([i.joint,i.single])===key}))return -1;
+ var g=['A','B'].filter(function(x){return !D.imports.some(function(i){return i.group===x})})[0];
+ if(!g)return -2;
+ D.imports.push({group:g,joint:p.joint,single:p.single});
+ D.imports.sort(function(a,b){return a.group<b.group?-1:1});
+ return g;
+}
+function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
+function render(name){
+ var V=VIEWS[name],D=load(V);
+ function save(){try{localStorage.setItem(V.key,JSON.stringify(D))}catch(e){}}
+ function buildPanel(){
+  var P=document.getElementById('panel');P.innerHTML='';
+  var msg=el('div','msg');
+  function say(s){msg.textContent=s}
+  if(!V.solution){
+            var btn=el('button',null,'Teilen');btn.type='button';
+   var box=el('textarea');box.readOnly=true;box.rows=6;box.style.display='none';
+   btn.addEventListener('click',function(){
+    var txt=shareText(payload(D));
+    function fallback(){box.value=txt;box.style.display='block';box.focus();box.select();say('Text bitte kopieren und an die Lehrkraft senden.')}
+    function copy(){
+     if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){say('In die Zwischenablage kopiert – jetzt in eine Nachricht einfügen.')},fallback)}
+     else fallback();
+    }
+    if(navigator.share){navigator.share({title:'Thesen-Matrix',text:txt}).then(function(){say('Geteilt.')},function(e){if(e&&e.name==='AbortError')return;copy()})}
+    else copy();
+   });
+   P.appendChild(btn);P.appendChild(msg);P.appendChild(box);
+  }else{
+   var ta=el('textarea');ta.rows=4;ta.placeholder='einfügen...';
+   var add=el('button',null,'Hinzufügen');add.type='button';
+   add.addEventListener('click',function(){
+    var ps=parseInput(ta.value);
+    if(!ps.length){say('Kein gültiger Code gefunden. Bitte die komplette Nachricht einfügen (inkl. [[THESEN:…]]).');return}
+    var ok=[],dup=0,full=0;ps.forEach(function(p){var r=addToSol(D,p);if(r===-1)dup++;else if(r===-2)full++;else ok.push('Gruppe '+r)});save();
+    FLASH=(ok.length?ok.join(' und ')+' hinzugefügt. ':'')+(dup?'Bereits geladen: '+dup+'. ':'')+(full?'Es sind schon zwei Lösungen geladen – bitte zuerst eine entfernen.':'');
+    render(name);
+   });
+   var rs=el('button',null,'Zurücksetzen');rs.type='button';var armed=false;
+   rs.addEventListener('click',function(){
+    if(!armed){armed=true;rs.textContent='Wirklich alles löschen?';return}
+    try{localStorage.removeItem(V.key)}catch(e){}
+    FLASH='Musterlösung zurückgesetzt.';render(name);
+   });
+   rs.addEventListener('blur',function(){armed=false;rs.textContent='Zurücksetzen'});
+   P.appendChild(ta);P.appendChild(add);P.appendChild(rs);
+   (D.imports||[]).forEach(function(im){
+    var chip=el('button',null,'Gruppe '+im.group+' ✕');chip.type='button';chip.title='Diese Lösung entfernen';
+    chip.addEventListener('click',function(){D.imports=D.imports.filter(function(i){return i!==im});save();FLASH='Gruppe '+im.group+' entfernt.';render(name)});
+    P.appendChild(chip);
+   });
+   P.appendChild(msg);
+  }
+  msg.textContent=FLASH;FLASH='';
+ }
+ function edit(n,o,k){n.contentEditable='true';n.addEventListener('input',function(){o[k]=n.textContent;save()})}
+ function card(it,label,del){
+  var c=el('div','card');c.dataset.g=it.g;
+  var tg=el('div','tag',V.solution?label:it.g+' · '+label);
+  if(del){var x=el('button','del','✕');x.type='button';x.title='Diese These löschen';x.setAttribute('aria-label','Diese These löschen');
+   x.addEventListener('click',function(){del();save();render(name)});tg.appendChild(x)}
+  c.appendChild(tg);
+  var q=el('div','q',it.q);edit(q,it,'q');var t=el('div','t',it.t);edit(t,it,'t');
+  c.appendChild(q);c.appendChild(t);return c;
+ }
+ buildPanel();
+ document.body.className=V.cls;
+ document.title=V.title;
+ document.getElementById('ttl').textContent=V.title;
+ [['diskussion','tab-d'],['loesung','tab-l']].forEach(function(p){document.getElementById(p[1]).setAttribute('aria-selected',p[0]===name)});
+ var T=document.getElementById('tbl');T.innerHTML='';
+ var cg=el('colgroup');cg.appendChild(el('col'));cg.firstChild.style.width='96px';
+ for(var i=0;i<6;i++)cg.appendChild(el('col'));T.appendChild(cg);
+ var hr=el('tr');hr.appendChild(el('th','rowh'));
+ D.labels.forEach(function(l){var th=el('th',null,l[0]);var b=el('small',null,l[1]);edit(b,l,1);th.appendChild(b);hr.appendChild(th)});
+ var thead=el('thead');thead.appendChild(hr);T.appendChild(thead);
+ var tb=el('tbody');
+ var kr=el('tr');kr.appendChild(el('th','rowh','Kernthese'));
+ var kt=el('td');kt.colSpan=6;kt.style.textAlign='center';
+ var kq=el('div','q',D.core.q);edit(kq,D.core,'q');var ktt=el('div','t',D.core.t);edit(ktt,D.core,'t');
+ kt.appendChild(kq);kt.appendChild(ktt);kr.appendChild(kt);tb.appendChild(kr);
+ [0,1].forEach(function(lane){
+  var tr=el('tr');
+  if(!lane){var rh=el('th','rowh','Übergreifende Thesen');rh.rowSpan=2;tr.appendChild(rh)}
+  var c=1;
+  while(c<=6){
+   var jb=D.joint.filter(function(j){return j.lane===lane&&j.from===c}),jl=[];
+   if(V.solution&&D.imports&&D.imports.length)D.imports.forEach(function(im){im.joint.forEach(function(j){if(j.lane===lane&&j.from===c)jl.push({it:j,grp:im.group,rm:function(){im.joint.splice(im.joint.indexOf(j),1)}})})});
+   else jb.forEach(function(j){jl.push({it:j,rm:V.solution?function(){D.joint.splice(D.joint.indexOf(j),1)}:null})});
+   var it=jl[0]&&jl[0].it;
+   if(it){var td=el('td');td.colSpan=it.to-it.from+1;jl.forEach(function(x){var j=x.it;td.appendChild(card(j,'Abschnitt '+j.from+' + '+j.to+(x.grp?' · Gruppe '+x.grp:''),x.rm))});tr.appendChild(td);c=it.to+1}
+   else{tr.appendChild(el('td'));c++}
+  }
+  tb.appendChild(tr);
+ });
+ var tr=el('tr');tr.appendChild(el('th','rowh','Einzelthesen'));
+ for(var c=1;c<=6;c++){
+  var td=el('td');
+  var list=D.single.filter(function(x){return x.sec===c}),canDel=false;
+  if(V.solution&&D.imports&&D.imports.length){
+   D.imports.forEach(function(im){im.single.filter(function(x){return x.sec===c}).forEach(function(x){td.appendChild(card(x,'Abschnitt '+c+' · Gruppe '+im.group,function(){im.single.splice(im.single.indexOf(x),1)}))})});
+   list=[];
+  }else canDel=V.solution||list.length>1;
+  list.forEach(function(it){td.appendChild(card(it,'Abschnitt '+c,canDel&&function(){D.single.splice(D.single.indexOf(it),1)}))});
+  tr.appendChild(td);
+ }
+ tb.appendChild(tr);T.appendChild(tb);
+}
+function route(){
+ var h=(location.hash||'').replace('#','');
+ render(VIEWS[h]?h:'diskussion');
+}
+document.querySelectorAll('.tabs button').forEach(function(b){
+ b.addEventListener('click',function(){location.hash=b.dataset.view});
+});
+window.addEventListener('hashchange',route);
+route();
+</script>
+</body>
+</html>
